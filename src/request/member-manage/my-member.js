@@ -1,4 +1,5 @@
 import Qs from 'qs';
+import {getMemberSetting} from './member-setting';
 
 // 获取会员列表
 export const getUserList = (vm) => {
@@ -21,3 +22,18 @@ export const getUserList = (vm) => {
             vm.$Message.error('异常情况');
         });
 };
+
+// 修改用户信息
+export const updateUser = ((vm) => {
+    let data = vm.updateUserItem;
+    vm.$axios.put('/user', data)
+        .then((rep) => {
+            if (rep.result) {
+                vm.$Message.success(rep.msg);
+                vm.updateUserModel = false;
+                getUserList(vm);
+            } else {
+                vm.$Message.error(rep.msg);
+            }
+        })
+})

@@ -40,7 +40,7 @@ export const updateMemberSetting = ((vm) => {
                 vm.$Message.error(rep.msg);
             }
         })
-})
+});
 
 // 修改会员等级
 export const updateMemberLevel = ((vm) => {
@@ -55,4 +55,4 @@ export const updateMemberLevel = ((vm) => {
                 vm.$Message.error(rep.msg);
             }
         })
-})
+});

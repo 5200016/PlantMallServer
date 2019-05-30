@@ -28,6 +28,33 @@
                   @on-change="changePage"
                   @on-page-size-change="changePageSize"></Page>
         </div>
+
+        <Modal
+                v-model="updateUserModel"
+                title="设置养护计划"
+                @on-ok="updateUserModelOk"
+                @on-cancel="updateUserModelCancel"
+                :mask-closable="false">
+            <div>
+                <Form :model="updateUserItem" :label-width="125">
+                    <FormItem label="姓名：">
+                        <Input v-model="updateUserItem.username"
+                               placeholder="请输入"
+                               style="width: 200px"></Input>
+                    </FormItem>
+                    <FormItem label="是否设置养护人员：">
+                        <RadioGroup v-model="updateUserItem.setStatus">
+                            <Radio :label="0">
+                                <span>否</span>
+                            </Radio>
+                            <Radio :label="1">
+                                <span>是</span>
+                            </Radio>
+                        </RadioGroup>
+                    </FormItem>
+                </Form>
+            </div>
+        </Modal>
     </div>
 </template>
 
@@ -61,6 +88,21 @@
                         title: '序号',
                         render: (h, params) => {
                             return h('span', {}, params.index)
+                        }
+                    },
+                    {
+                        title: '身份',
+                        align: 'center',
+                        render: (h, params) => {
+                            let status = 0;
+                            if(params.row.maintenancePersonnelId !== null){
+                                status = 1
+                            }
+                            return h('Tag', {
+                                props: {
+                                    color: status === 1 ? 'success' : 'primary'
+                                }
+                            }, status === 1 ? '养护人员' : '用户')
                         }
                     },
                     {
@@ -126,7 +168,7 @@
                                     },
                                     on: {
                                         click: () => {
-                                            // this.$onClickUpdateUserInfo(params);
+                                            this.updateUserInfo(params);
                                         }
                                     }
                                 }, '编辑')
@@ -134,6 +176,15 @@
                         }
                     }
                 ],
+
+                // 编辑用户信息模态框
+                updateUserModel: false,
+                updateUserItem: {
+                    id: null,
+                    maintenancePersonnelId: null,
+                    username: '',
+                    setStatus: 0
+                }
             }
         },
         methods: {
@@ -149,10 +200,32 @@
                 this.initUserList();
             },
             changePageSize (val) {
-                this.pageSize = val
-                this.pageNum = 1
+                this.pageSize = val;
+                this.pageNum = 1;
                 this.initUserList();
-            }
+            },
+
+            updateUserInfo(params){
+                this.updateUserModel = true;
+                this.updateUserItem.id = params.row.id;
+                this.updateUserItem.username = params.row.username;
+                this.updateUserItem.maintenancePersonnelId = params.row.maintenancePersonnelId;
+                if(params.row.maintenancePersonnelId !== null){
+                    this.updateUserItem.setStatus = 1;
+                }else {
+                    this.updateUserItem.setStatus = 0;
+                }
+            },
+
+            // 编辑用户信息模态框确认操作
+            updateUserModelOk () {
+                myMemberRequest.updateUser(this);
+            },
+
+            // 编辑用户信息模态框取消操作
+            updateUserModelCancel () {
+                this.updateUserModel = false;
+            },
         },
         created () {
             this.initUserList(this);

@@ -170,7 +170,7 @@
                                 style="width:300px;"
                                 placeholder="请选择养护人员"
                                 filterable>
-                            <Option v-for="item in maintenanceList" :value="item.id" :key="item.id">{{ item.name }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;手机号：{{item.phone}}</Option>
+                            <Option v-for="item in maintenanceList" :value="item.id" :key="item.id">{{ item.user.username }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;手机号：{{item.user.phone}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;状态：{{item.status == 0 ? '空闲' : '已安排'}}</Option>
                         </Select>
                     </FormItem>
 

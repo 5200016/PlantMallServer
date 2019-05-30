@@ -115,7 +115,7 @@
                         </Upload>
                     </FormItem>
 
-                    <FormItem label="植物描述：">
+                    <FormItem label="植物描述：" class="plant-desc">
                         <vue-UEditor-wrap v-model="updatePlantLogItem.description" :config="myConfig"></vue-UEditor-wrap>
                     </FormItem>
                 </Form>
