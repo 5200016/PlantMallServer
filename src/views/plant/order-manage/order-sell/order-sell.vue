@@ -190,6 +190,10 @@
                     {
                         value: 4,
                         label: '售后'
+                    },
+                    {
+                        value: 5,
+                        label: '已评价'
                     }
                 ],
                 // 选择器参数（支付类型）
@@ -262,6 +266,9 @@
                                     break;
                                 case 4 :
                                     status = '售后';
+                                    break;
+                                case 5 :
+                                    status = '已评价';
                                     break;
                             }
                             return h('div', {}, status);

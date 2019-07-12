@@ -148,6 +148,22 @@
                             </FormItem>
                         </Form>
                     </TabPane>
+                    <TabPane label="养护记录" name="maintenance">
+                        <div class="order-lease-list">
+                            <Table :columns="maintenanceColumns"
+                                   border
+                                   ref="selection"
+                                   :data="maintenanceFinishList"
+                                   :loading="maintenanceFinishLoading"></Table>
+                        </div>
+                    </TabPane>
+                    <Modal title="预览图片"
+                           v-model="previewModel"
+                           @on-ok="previewModelFunction()"
+                           @on-cancel="previewModelFunction()"
+                           :closable="false">
+                        <img :src="previewImage" style="width: 100%">
+                    </Modal>
                 </Tabs>
             </div>
         </Modal>
@@ -189,11 +205,18 @@
 <script>
     import * as orderLeaseRequest from '../../../../request/order-manage/order-lease';
     import {formatDate} from '../../../../libs/Date';
-
+    import {URL} from '../../../../request/config';
     export default {
         name: 'order-lease',
         data () {
             return {
+
+                url: URL + '/',
+
+                // 预览功能参数
+                previewImage: '',
+                previewModel: false,
+                insertPreviewModel: false,
 
                 // 订单商品
                 orderProduct: {
@@ -225,11 +248,11 @@
                     },
                     {
                         value: 2,
-                        label: '配送中'
+                        label: '待收货'
                     },
                     {
                         value: 3,
-                        label: '已租赁'
+                        label: '待评价'
                     },
                     {
                         value: 4,
@@ -237,7 +260,7 @@
                     },
                     {
                         value: 5,
-                        label: '已取消'
+                        label: '已评价'
                     }
                 ],
                 // 选择器参数（支付类型）
@@ -268,6 +291,10 @@
                 // 租赁订单商品列表
                 orderProductList: [],
                 orderProductLoading: true,
+
+                // 养护记录
+                maintenanceFinishList: [],
+                maintenanceFinishLoading: true,
 
                 // 批量发货订单
                 orderShipmentsBatch: [],
@@ -309,16 +336,16 @@
                                     status = '待发货';
                                     break;
                                 case 2 :
-                                    status = '配送中';
+                                    status = '待收货';
                                     break;
                                 case 3 :
-                                    status = '已租赁';
+                                    status = '待评价';
                                     break;
                                 case 4 :
-                                    status = '已完成';
+                                    status = '售后';
                                     break;
                                 case 5 :
-                                    status = '已取消';
+                                    status = '已评价';
                                     break;
                             }
                             return h('div', {}, status);
@@ -378,7 +405,7 @@
                                     },
                                     style: {
                                         width: '85px',
-                                        display:(status === 3)? "inline-block" : "none",
+                                        display:(status == 3 || status == 5)? "inline-block" : "none",
                                     },
                                     on: {
                                         click: () => {
@@ -483,6 +510,67 @@
                         }
                     }],
 
+                // 养护记录详情
+                maintenanceColumns: [
+                    {
+                        type: 'index',
+                        align: 'center',
+                        width: 75,
+                        title: '序号',
+                        render: (h, params) => {
+                            return h('span', {}, params.index);
+                        }
+                    },
+                    {
+                        title: '计划养护时间',
+                        align: 'center',
+                        key: 'name',
+                        render: (h, params) => {
+                            return h('span', {}, params.row.time);
+                        }
+                    },
+                    {
+                        title: '完成养护时间',
+                        align: 'center',
+                        key: 'name',
+                        render: (h, params) => {
+                            return h('span', {}, params.row.finishTime);
+                        }
+                    },
+                    {
+                        title: '养护状态',
+                        align: 'center',
+                        key: 'name',
+                        render: (h, params) => {
+                            return h('span', {}, '已完成');
+                        }
+                    },
+                    {
+                        title: '操作',
+                        key: 'action',
+                        width: 200,
+                        align: 'center',
+                        render: (h, params) => {
+                            return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        width: '65px',
+                                        marginLeft: '10px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.checkMaintenanceFinish(params);
+                                        }
+                                    }
+                                }, '查看记录')
+                            ]);
+                        }
+                    }],
+
                 // 租赁订单模态框
                 detailModel: false,
                 orderLeaseItem: {
@@ -538,6 +626,7 @@
                 this.orderProduct.orderId = params.row.id;
                 orderLeaseRequest.getProductListBrief(this);
                 orderLeaseRequest.getOrderProductByOrderId(this);
+                orderLeaseRequest.getMaintenanceByOrderId(this);
                 this.orderLeaseItem = params.row;
                 this.detailModel = true;
             },
@@ -580,7 +669,6 @@
                     this.maintenancePlaneItem.maintenanceTime = [];
                 }
                 orderLeaseRequest.setMaintenancePlan(this);
-                this.maintenancePlanModel = false;
             },
 
             // 养护计划模态框取消操作
@@ -610,7 +698,20 @@
             // 补发商品
             reissueProduct(){
                 orderLeaseRequest.reissueProduct(this);
-            }
+            },
+
+            // 查看养护记录
+            checkMaintenanceFinish(params){
+                this.previewImage = this.url + params.row.url;
+                this.previewModel = true;
+                this.detailModel = false;
+            },
+
+            // 预览操作
+            previewModelFunction () {
+                this.previewModel = false;
+                this.detailModel = true;
+            },
         },
         created () {
             this.initOrderLeaseList();

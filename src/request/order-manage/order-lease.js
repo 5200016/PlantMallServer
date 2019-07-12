@@ -44,6 +44,25 @@ export const getOrderProductByOrderId = (vm) => {
         });
 };
 
+// 根据订单列表id获取养护记录
+export const getMaintenanceByOrderId = (vm) => {
+    let data = Qs.stringify({
+        orderId: vm.orderProduct.orderId,
+    });
+    vm.$axios.get('/maintenance/order_id?' + data)
+        .then(function (rep) {
+            if (rep.result) {
+                vm.maintenanceFinishLoading = false;
+                vm.maintenanceFinishList = rep.data;
+            } else {
+                vm.$Message.error(rep.msg);
+            }
+        })
+        .catch(function (error) {
+            vm.$Message.error('异常情况');
+        });
+};
+
 // 获取商品列表（简略信息）
 export const getProductListBrief = (vm) => {
     vm.$axios.get('/product/brief')
@@ -122,13 +141,14 @@ export const reissueProduct = ((vm) => {
         });
 });
 
-// 补发商品
+// 设置养护计划
 export const setMaintenancePlan = ((vm) => {
     let data = vm.maintenancePlaneItem;
     vm.$axios.put('/order/maintenance', data)
         .then((rep) => {
             if (rep.result) {
                 vm.$Message.success(rep.msg);
+                vm.maintenancePlanModel = false;
                 getOrderLeaseList(vm);
             } else {
                 vm.$Message.error(rep.msg);
