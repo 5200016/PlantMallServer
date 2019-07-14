@@ -1,5 +1,23 @@
 import Qs from 'qs';
 
+// 新增订单
+export const insertOrder = ((vm) => {
+    let data = vm.insertOrderItem;
+    vm.$axios.post('/order', data)
+        .then((rep) => {
+            if (rep.result) {
+                vm.$Message.success(rep.msg);
+                vm.insertModel = false;
+                getOrderLeaseList(vm);
+            } else {
+                vm.$Message.error(rep.msg);
+            }
+        })
+        .catch(function (error) {
+            vm.$Message.error('异常情况');
+        });
+});
+
 // 获取租赁订单列表
 export const getOrderLeaseList = (vm) => {
     let data = Qs.stringify({
@@ -69,6 +87,18 @@ export const getProductListBrief = (vm) => {
         .then(function (rep) {
             if (rep.result) {
                 vm.productList = rep.data;
+            } else {
+                vm.$Message.error(rep.msg);
+            }
+        })
+};
+
+// 获取用户列表（简略信息）
+export const getUserListBrief = (vm) => {
+    vm.$axios.get('/users/brief')
+        .then(function (rep) {
+            if (rep.result) {
+                vm.userList = rep.data;
             } else {
                 vm.$Message.error(rep.msg);
             }

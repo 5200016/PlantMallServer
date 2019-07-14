@@ -16,6 +16,8 @@
         <!-- 查询按钮 -->
         <Button class="queryButton" type="primary" @click="initOrderLeaseList">查询</Button>
 
+        <!-- 新增订单 -->
+        <Button class="insert-button" type="primary" @click="insertOrder">新增订单</Button>
         <!-- 发货 -->
         <Button class="shipmentsBatch-button" type="primary" @click="shipmentsBatch">批量发货</Button>
 
@@ -42,6 +44,81 @@
                   @on-change="changePage"
                   @on-page-size-change="changePageSize"></Page>
         </div>
+
+        <!-- 新增订单模态框 -->
+        <Modal
+                v-model="insertModel"
+                title="新增订单"
+                width="768px"
+                @on-ok="insertModelOk"
+                @on-cancel="insertModelCancel"
+                :mask-closable="false"
+                :loading="insertModelLoading">
+            <div>
+                <Form :model="insertOrderItem" :label-width="122" inline>
+                    <FormItem label="微信用户：">
+                        <Select v-model="insertOrderItem.userId"
+                                style="margin-bottom: 5px;width:200px;"
+                                placeholder="请选择用户"
+                                filterable>
+                            <Option v-for="item in userList" :value="item.id" :key="item.id">昵称：{{ item.nickname }}&nbsp;&nbsp;&nbsp;&nbsp; 姓名：{{item.username ? '' : item.username}}</Option>
+                        </Select>
+                    </FormItem>
+
+                    <FormItem label="收货人姓名：">
+                        <Input v-model="insertOrderItem.name" placeholder="请输入"
+                               style="width: 200px"></Input>
+                    </FormItem>
+
+                    <FormItem label="联系方式：">
+                        <Input v-model="insertOrderItem.phone" placeholder="请输入"
+                               style="width: 200px"></Input>
+                    </FormItem>
+
+                    <FormItem label="收货地区：">
+                        <Input v-model="insertOrderItem.area" placeholder="例：江苏省 南京市 浦口区"
+                               style="width: 200px"></Input>
+                    </FormItem>
+
+                    <FormItem label="收货详细地址：">
+                        <Input v-model="insertOrderItem.address"
+                               :autosize="true"
+                               type="textarea"
+                               style="width: 535px"></Input>
+                    </FormItem>
+
+                    <FormItem label="订单描述：">
+                        <Input v-model="insertOrderItem.description"
+                               :autosize="true"
+                               type="textarea"
+                               style="width: 535px"></Input>
+                    </FormItem>
+
+                    <FormItem label="订单金额：">
+                        <Input v-model="insertOrderItem.price" placeholder="订单金额"
+                               style="width: 200px"></Input>
+                    </FormItem>
+
+                    <div style="margin-left: 25px">
+                        <Select v-model="insertOrderProductItem.productId"
+                                style="margin-bottom: 5px;width:300px;"
+                                placeholder="请选择商品"
+                                filterable>
+                            <Option v-for="item in productList" :value="item.id" :key="item.id">{{ item.name }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;价格：{{item.leasePrice}}/天&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;库存：{{item.inventory}}
+                            </Option>
+                        </Select>
+                        <Input v-model="insertOrderProductItem.productNumber" type="number" placeholder="租赁数量" style="width: 82px;margin-bottom: 5px" />
+                        <Button class="productButton left" type="primary" @click="insertLeaseProduct">添加</Button>
+                        <div class="order-lease-list">
+                            <Table :columns="insertOrderProductColumns"
+                                   border
+                                   :data="products"></Table>
+                        </div>
+                    </div>
+
+                </Form>
+            </div>
+        </Modal>
 
         <!-- 查看详情模态框 -->
         <Modal
@@ -231,6 +308,27 @@
                     value: '',
                     status: '',
                 },
+
+                // 新增订单模态框参数
+                insertModel: false,
+                insertModelLoading: false,
+                insertOrderItem: {
+                    address: "",
+                    area: "",
+                    description: "",
+                    name: "",
+                    number: 0,
+                    phone: "",
+                    price: 0,
+                    products: [],
+                    type: 1,
+                    userId: null
+                },
+                userList: [],
+                products: [],
+                insertOrderProductItem: {},
+                leasePrice: 0,
+
 
                 // 选择器参数（订单状态）
                 selectList: [
@@ -509,6 +607,57 @@
                             ]);
                         }
                     }],
+                // 新增订单商品表格
+                insertOrderProductColumns: [
+                    {
+                        type: 'index',
+                        align: 'center',
+                        width: 75,
+                        title: '序号',
+                        render: (h, params) => {
+                            return h('span', {}, params.index);
+                        }
+                    },
+                    {
+                        title: '商品名称',
+                        align: 'center',
+                        key: 'name',
+                        render: (h, params) => {
+                            return h('span', {}, params.row.name);
+                        }
+                    },
+                    {
+                        title: '租赁数量',
+                        align: 'center',
+                        key: 'name',
+                        render: (h, params) => {
+                            return h('span', {}, params.row.productNumber);
+                        }
+                    },
+                    {
+                        title: '状态',
+                        key: 'action',
+                        width: 115,
+                        align: 'center',
+                        render: (h, params) => {
+                            return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'error',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        width: '85px',
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.productsRemove(params.index)
+                                        }
+                                    },
+                                }, '删除')
+                            ]);
+                        }
+                    }],
 
                 // 养护记录详情
                 maintenanceColumns: [
@@ -608,6 +757,24 @@
             // 初始化租赁订单列表
             initOrderLeaseList () {
                 orderLeaseRequest.getOrderLeaseList(this);
+                orderLeaseRequest.getProductListBrief(this);
+                orderLeaseRequest.getUserListBrief(this);
+            },
+
+            // 初始化新增模态框数据
+            initInsertModel () {
+                this.insertOrderItem = {
+                    address: "",
+                    area: "",
+                    description: "",
+                    name: "",
+                    number: 0,
+                    phone: "",
+                    price: 0,
+                    products: [],
+                    type: 1,
+                    userId: null
+                };
             },
 
             // 分页事件
@@ -621,10 +788,50 @@
                 this.initOrderLeaseList();
             },
 
+            // 新增订单
+            insertOrder(){
+                this.initInsertModel();
+                this.insertModel = true;
+            },
+
+            // 新增模态框确认操作
+            insertModelOk () {
+                let number = 0;
+                this.products.forEach(item => {
+                    number += item.productNumber;
+                });
+                this.insertOrderItem.products = this.products;
+                this.insertOrderItem.number = number;
+                orderLeaseRequest.insertOrder(this);
+            },
+
+            // 新增模态框取消操作
+            insertModelCancel () {
+                this.initInsertModel();
+                this.insertModel = false;
+            },
+
+            insertLeaseProduct () {
+                this.productList.forEach(item => {
+                    if(item.id == this.insertOrderProductItem.productId){
+                        let product = {
+                            productId: this.insertOrderProductItem.productId,
+                            name: item.name,
+                            productNumber: parseInt(this.insertOrderProductItem.productNumber),
+                            leasePrice: this.insertOrderProductItem.leasePrice
+                        };
+                        this.products.push(product);
+                    }
+                })
+            },
+
+            productsRemove (index){
+                this.products.splice(index, 1);
+            },
+
             // 查看租赁订单详情
             checkDetails (params) {
                 this.orderProduct.orderId = params.row.id;
-                orderLeaseRequest.getProductListBrief(this);
                 orderLeaseRequest.getOrderProductByOrderId(this);
                 orderLeaseRequest.getMaintenanceByOrderId(this);
                 this.orderLeaseItem = params.row;
